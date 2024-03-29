@@ -6,10 +6,13 @@ export default function SignUp() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Update form data as user types in information
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
+  // On submit, send data to server to add to database
+  // Error handling included for already existing users
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
