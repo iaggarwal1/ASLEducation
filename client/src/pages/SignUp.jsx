@@ -1,11 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { currentUser } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/profile"); // Redirect to home page if the user is already logged in
+    }
+  }, [currentUser, navigate]);
 
   // Update form data as user types in information
   const handleChange = (e) => {
