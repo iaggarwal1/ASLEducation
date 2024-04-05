@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { current } from "@reduxjs/toolkit";
 
 export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
@@ -15,8 +14,8 @@ export default function Header() {
           <Link to="/">
             <li>Home</li>
           </Link>
-          <Link to="/about">
-            <li>About</li>
+          <Link to="/video">
+            {currentUser ? <li>Video</li> : <li></li>}
           </Link>
           <Link to="/profile">
             {currentUser ? <li>Profile</li> : <li>Sign In</li>}
