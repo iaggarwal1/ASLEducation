@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { current } from "@reduxjs/toolkit";
 
 export default function Header() {
+  const { currentUser } = useSelector((state) => state.user);
   return (
     <div className="bg-slate-200">
       <div className="flex justify-between items-center max-w-6xl mx-auto p-3">
@@ -15,8 +18,8 @@ export default function Header() {
           <Link to="/about">
             <li>About</li>
           </Link>
-          <Link to="/sign-in">
-            <li>Sign In</li>
+          <Link to="/profile">
+            {currentUser ? <li>Profile</li> : <li>Sign In</li>}
           </Link>
         </ul>
       </div>
