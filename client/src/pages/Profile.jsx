@@ -1,11 +1,18 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { signOut } from "../redux/user/userSlice";
 
 export default function Profile() {
-  const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const { currentUser, loading, error } = useSelector((state) => state.user);
 
-  const handleSignOut = () => {
-    // Implement your sign out logic here
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/signout");
+      dispatch(signOut());
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -15,7 +22,6 @@ export default function Profile() {
         <div className="bg-slate-100 rounded-lg p-5 shadow-md">
           <h3 className="text-xl font-semibold">{currentUser.username}</h3>
           <p className="text-gray-600 mt-2">Email: {currentUser.email}</p>
-          {/* Add more details here if needed */}
         </div>
       </div>
       <div className="flex justify-end mt-5">
@@ -26,6 +32,7 @@ export default function Profile() {
           Sign out
         </button>
       </div>
+      <p className="text-red-700 mt-5">{error && "Something went wrong!"}</p>
     </div>
   );
 }
