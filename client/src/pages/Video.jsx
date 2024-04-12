@@ -58,6 +58,7 @@ export default function Video() {
     canvasCtx.restore();
 
     setDetections((prevDetections) => {
+      console.log(results["faceLandmarks"]);
       const collapsedResults = [];
       const bodyParts = [
         "faceLandmarks",
@@ -78,7 +79,7 @@ export default function Video() {
 
           for (let i = 0; i < arrayLens[partName]; i++) {
             const point = partArray[i];
-            collapsedResults.push(point[0], point[1], point[2]);
+            collapsedResults.push(point["x"], point["y"], point["z"]);
           }
         } else {
           for (let i = 0; i < arrayLens[partName]; i++) {
@@ -89,7 +90,7 @@ export default function Video() {
 
       const updatedDetections = [...prevDetections, collapsedResults];
       console.log(updatedDetections);
-      if (updatedDetections.length >= 75) {
+      if (updatedDetections.length >= 25) {
         sendDetections(updatedDetections);
         return [];
       }
