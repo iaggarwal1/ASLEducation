@@ -13,10 +13,8 @@ export default function Video() {
   const canvasRef = useRef(null);
   const [phrase, setPhrase] = useState(""); // State variable to store classification output
   const [detections, setDetections] = useState([]); // Buffer to store detection results
-  const sendInterval = useRef(null);
 
   const onResults = (results) => {
-    console.log(results);
     if (!webcamRef.current?.video || !canvasRef.current) return;
     const videoWidth = webcamRef.current.video.videoWidth;
     const videoHeight = webcamRef.current.video.videoHeight;
@@ -25,24 +23,18 @@ export default function Video() {
 
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext("2d");
-    if (canvasCtx == null) throw new Error("Could not get context");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-    canvasCtx.globalCompositeOperation = "source-in";
-    canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
-
-    canvasCtx.globalCompositeOperation = "destination-atop";
     canvasCtx.drawImage(
-      results.image,
+      webcamRef.current.video,
       0,
       0,
       canvasElement.width,
       canvasElement.height
     );
 
-    canvasCtx.globalCompositeOperation = "source-over";
-    drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION, {
+    drawConnectors(canvasCtx, results.poseLandmarks, FACEMESH_TESSELATION, {
       color: "#C0C0C070",
       lineWidth: 1,
     });
@@ -62,15 +54,47 @@ export default function Video() {
       color: "#FF0000",
       lineWidth: 2,
     });
+
     canvasCtx.restore();
 
-    // Collect multiple frames for batch sending
-    setDetections((prevDetections) => [...prevDetections, results]);
-    console.log(detections);
+    setDetections((prevDetections) => {
+      const collapsedResults = [];
+      const bodyParts = [
+        "faceLandmarks",
+        "poseLandmarks",
+        "leftHandLandmarks",
+        "rightHandLandmarks",
+      ];
+      const arrayLens = {
+        faceLandmarks: 468,
+        poseLandmarks: 33,
+        leftHandLandmarks: 21,
+        rightHandLandmarks: 21,
+      };
 
-    // Example: Update phrase state with a dummy value or model result
-    const receivedPhrase = "Hello"; // Replace this with your model's output
-    setPhrase(receivedPhrase);
+      for (const partName of bodyParts) {
+        if (partName in results) {
+          const partArray = results[partName];
+
+          for (let i = 0; i < arrayLens[partName]; i++) {
+            const point = partArray[i];
+            collapsedResults.push(point[0], point[1], point[2]);
+          }
+        } else {
+          for (let i = 0; i < arrayLens[partName]; i++) {
+            collapsedResults.push(0, 0, 0);
+          }
+        }
+      }
+
+      const updatedDetections = [...prevDetections, collapsedResults];
+      console.log(updatedDetections);
+      if (updatedDetections.length >= 75) {
+        sendDetections(updatedDetections);
+        return [];
+      }
+      return updatedDetections;
+    });
   };
 
   useEffect(() => {
@@ -78,6 +102,7 @@ export default function Video() {
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`,
     });
+
     holistic.setOptions({
       selfieMode: true,
       modelComplexity: 1,
@@ -88,9 +113,10 @@ export default function Video() {
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
     });
+
     holistic.onResults(onResults);
 
-    if (webcamRef.current && webcamRef.current.video) {
+    if (webcamRef.current?.video) {
       const camera = new Camera(webcamRef.current.video, {
         onFrame: async () => {
           await holistic.send({ image: webcamRef.current.video });
@@ -101,25 +127,20 @@ export default function Video() {
       camera.start();
     }
 
-    sendInterval.current = setInterval(() => {
-      if (detections.length > 0) {
-        sendDetections(detections);
-        setDetections([]);
-      }
-    }, 5000);
-
     return () => {
-      clearInterval(sendInterval.current);
+      holistic.close(); // Ensure to cleanup resources
     };
-  }, [detections]);
+  }, []);
 
   const sendDetections = async (data) => {
+    console.log("Sending 150 detections");
     try {
       const response = await fetch("/api/feed/send-frames", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      console.log("Data sent successfully");
     } catch (err) {
       console.error("Failed to send data: ", err);
     }
