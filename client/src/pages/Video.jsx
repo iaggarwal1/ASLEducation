@@ -90,7 +90,7 @@ export default function Video() {
 
       const updatedDetections = [...prevDetections, collapsedResults];
       console.log(updatedDetections);
-      if (updatedDetections.length >= 25) {
+      if (updatedDetections.length >= 150) {
         sendDetections(updatedDetections);
         return [];
       }

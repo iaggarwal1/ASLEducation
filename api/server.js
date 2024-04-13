@@ -1,10 +1,12 @@
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import bodyParser from "body-parser";
 import userRoutes from "./routes/user.route.js";
 import authRoutes from "./routes/auth.route.js";
 import feedRoutes from "./routes/feed.route.js";
 import path from "path";
+
 
 dotenv.config();
 
@@ -19,6 +21,9 @@ mongoose
 
 const __dirname = path.resolve();
 const app = express();
+
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 
 app.use(express.static(path.join(__dirname, "/client/dist")));
 app.get("*", (req, res) => {
