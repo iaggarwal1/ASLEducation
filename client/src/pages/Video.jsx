@@ -23,18 +23,24 @@ export default function Video() {
 
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext("2d");
+    if (canvasCtx == null) throw new Error("Could not get context");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
+    canvasCtx.globalCompositeOperation = "source-in";
+    canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+    canvasCtx.globalCompositeOperation = "destination-atop";
     canvasCtx.drawImage(
-      webcamRef.current.video,
+      results.image,
       0,
       0,
       canvasElement.width,
       canvasElement.height
     );
 
-    drawConnectors(canvasCtx, results.poseLandmarks, FACEMESH_TESSELATION, {
+    canvasCtx.globalCompositeOperation = "source-over";
+    drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION, {
       color: "#C0C0C070",
       lineWidth: 1,
     });
@@ -58,7 +64,6 @@ export default function Video() {
     canvasCtx.restore();
 
     setDetections((prevDetections) => {
-      console.log(results["faceLandmarks"]);
       const collapsedResults = [];
       const bodyParts = [
         "faceLandmarks",
@@ -89,10 +94,12 @@ export default function Video() {
       }
 
       const updatedDetections = [...prevDetections, collapsedResults];
-      console.log(updatedDetections);
       if (updatedDetections.length >= 150) {
         sendDetections(updatedDetections);
-        return updatedDetections.slice(updatedDetections.length - 75, updatedDetections.length);
+        return updatedDetections.slice(
+          updatedDetections.length - 75,
+          updatedDetections.length
+        );
       }
       return updatedDetections;
     });
@@ -134,14 +141,12 @@ export default function Video() {
   }, []);
 
   const sendDetections = async (data) => {
-    console.log("Sending 150 detections");
     try {
       const response = await fetch("/api/feed/send-frames", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      console.log("Data sent successfully");
     } catch (err) {
       console.error("Failed to send data: ", err);
     }
@@ -153,11 +158,13 @@ export default function Video() {
     }
     var pattern = newPhrase.slice(1);
     var table = buildFailureTable(newPhrase);
-    var bestFindIndex = 0, bestFindLength = 0;
-    var i = 0, j = 0;
+    var bestFindIndex = 0,
+      bestFindLength = 0;
+    var i = 0,
+      j = 0;
 
     while (i <= phrase.length - pattern.length) {
-      while (j < pattern.length && pattern[j] == phrase[i+j]) {
+      while (j < pattern.length && pattern[j] == phrase[i + j]) {
         j++;
       }
       if (j >= bestFindLength) {
@@ -174,11 +181,12 @@ export default function Video() {
     }
 
     return phrase.slice(bestFindIndex) + pattern;
-  }
+  };
 
   const buildFailureTable = (pattern) => {
     var table = Array(pattern.length);
-    var i = 0, j = 1;
+    var i = 0,
+      j = 1;
     table[0] = 0;
     while (j < pattern.length) {
       if (pattern[i] == pattern[j]) {
@@ -193,7 +201,7 @@ export default function Video() {
     }
 
     return table;
-  }
+  };
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
