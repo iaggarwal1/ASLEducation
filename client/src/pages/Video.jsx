@@ -92,7 +92,7 @@ export default function Video() {
       console.log(updatedDetections);
       if (updatedDetections.length >= 150) {
         sendDetections(updatedDetections);
-        return [];
+        return updatedDetections.slice(updatedDetections.length - 75, updatedDetections.length);
       }
       return updatedDetections;
     });
@@ -146,6 +146,54 @@ export default function Video() {
       console.error("Failed to send data: ", err);
     }
   };
+
+  const patternMatch = (newPhrase) => {
+    if (newPhrase.length == 0) {
+      return phrase;
+    }
+    var pattern = newPhrase.slice(1);
+    var table = buildFailureTable(newPhrase);
+    var bestFindIndex = 0, bestFindLength = 0;
+    var i = 0, j = 0;
+
+    while (i <= phrase.length - pattern.length) {
+      while (j < pattern.length && pattern[j] == phrase[i+j]) {
+        j++;
+      }
+      if (j >= bestFindLength) {
+        bestFindIndex = i;
+        bestFindLength = j;
+      }
+      if (j == 0) {
+        i++;
+      } else {
+        var shiftTo = table[j - 1];
+        i += j = shiftTo;
+        j = shiftTo;
+      }
+    }
+
+    return phrase.slice(bestFindIndex) + pattern;
+  }
+
+  const buildFailureTable = (pattern) => {
+    var table = Array(pattern.length);
+    var i = 0, j = 1;
+    table[0] = 0;
+    while (j < pattern.length) {
+      if (pattern[i] == pattern[j]) {
+        table[j++] = i++ + 1;
+      } else {
+        if (i != 0) {
+          i = table[i - 1];
+        } else {
+          table[j++] = i;
+        }
+      }
+    }
+
+    return table;
+  }
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
