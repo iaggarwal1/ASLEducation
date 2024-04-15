@@ -67,8 +67,8 @@ export default function Video() {
       const collapsedResults = [];
       const bodyParts = [
         "faceLandmarks",
-        "poseLandmarks",
         "leftHandLandmarks",
+        "poseLandmarks",
         "rightHandLandmarks",
       ];
       const arrayLens = {
@@ -78,17 +78,18 @@ export default function Video() {
         rightHandLandmarks: 21,
       };
 
-      for (const partName of bodyParts) {
-        if (partName in results) {
-          const partArray = results[partName];
+      for (const curLetter of ["x", "y", "z"]) {
+        for (const partName of bodyParts) {
+          if (partName in results) {
+            const partArray = results[partName];
 
-          for (let i = 0; i < arrayLens[partName]; i++) {
-            const point = partArray[i];
-            collapsedResults.push(point["x"], point["y"], point["z"]);
-          }
-        } else {
-          for (let i = 0; i < arrayLens[partName]; i++) {
-            collapsedResults.push(0, 0, 0);
+            for (let i = 0; i < arrayLens[partName]; i++) {
+              collapsedResults.push(partArray[i][curLetter]);
+            }
+          } else {
+            for (let i = 0; i < arrayLens[partName]; i++) {
+              collapsedResults.push(0);
+            }
           }
         }
       }
@@ -141,12 +142,15 @@ export default function Video() {
   }, []);
 
   const sendDetections = async (data) => {
+    const jsonData = { frames: data };
     try {
       const response = await fetch("/api/feed/send-frames", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(jsonData),
       });
+      const output = await response.json();
+      setPhrase(patternMatch(output.prediction));
     } catch (err) {
       console.error("Failed to send data: ", err);
     }
