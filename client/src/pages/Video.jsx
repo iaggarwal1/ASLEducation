@@ -150,7 +150,8 @@ export default function Video() {
         body: JSON.stringify(jsonData),
       });
       const output = await response.json();
-      setPhrase(patternMatch(output.prediction));
+      // setPhrase(patternMatch(output.prediction));
+      setPhrase(output.prediction);
     } catch (err) {
       console.error("Failed to send data: ", err);
     }
